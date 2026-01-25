@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{C4AD9936-F0DF-1090-6077-3D4A6324E662}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataConfigTool", "DataConfigTool.csproj", "{CDD4B2C3-CC83-00A5-2321-BCD99BF5C28B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CDD4B2C3-CC83-00A5-2321-BCD99BF5C28B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDD4B2C3-CC83-00A5-2321-BCD99BF5C28B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDD4B2C3-CC83-00A5-2321-BCD99BF5C28B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDD4B2C3-CC83-00A5-2321-BCD99BF5C28B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{CDD4B2C3-CC83-00A5-2321-BCD99BF5C28B} = {C4AD9936-F0DF-1090-6077-3D4A6324E662}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {690D30D3-770D-4979-8FAC-A438A091D523}
+	EndGlobalSection
+EndGlobal

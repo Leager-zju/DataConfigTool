@@ -1,0 +1,92 @@
+table_name: ITEM_INFO_CONF
+group_name: item_conf
+key_type: !KeyType table
+columns:
+- name: id
+  type: int
+  description: 物品ID
+  default: 0
+- name: name
+  type: string
+  description: 物品名称
+  default: ''
+- name: type
+  type: string
+  description: 物品类型
+  default: ''
+- name: value
+  type: float
+  description: 物品价值
+  default: 0.0
+- name: stackable
+  type: bool
+  description: 是否可堆叠
+  default: true
+- name: max_stack
+  type: int
+  description: 最大堆叠数量
+  default: 1
+- name: tags
+  type: List<string>
+  description: 标签列表
+  default: []
+- name: properties
+  type: Dictionary<string, float>
+  description: 额外属性
+  default: {}
+data:
+- id: 1001
+  name: 铁剑
+  type: weapon
+  value: 50.0
+  stackable: false
+  max_stack: 1
+  tags:
+  - weapon
+  - melee
+  - iron
+  properties:
+    damage: 10
+    durability: 100
+- id: 1002
+  name: 生命药水
+  type: consumable
+  value: 50.0
+  stackable: true
+  max_stack: 99
+  tags:
+  - consumable
+  - healing
+  properties:
+    heal_amount: 50
+    duration: 0
+- id: 1003
+  name: 金币
+  type: currency
+  value: 1.0
+  stackable: true
+  max_stack: 9999
+  tags:
+  - currency
+  properties: {}
+- id: 1004
+  name: 木盾
+  type: armor
+  value: 80.0
+  stackable: false
+  max_stack: 1
+  tags:
+  - armor
+  - shield
+  - wood
+  properties:
+    defense: 5
+    durability: 80
+- id: 1005
+  name: 木剑
+  type: weapon
+  value: 20.0
+  stackable: false
+  max_stack: 1
+  tags: null
+  properties: null

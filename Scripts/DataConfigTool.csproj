@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <AssemblyName>DataConfigTool</AssemblyName>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <OutputType>Library</OutputType>
+    </PropertyGroup>
+    <PropertyGroup>
+        <Version>1.0.0</Version>
+        <Author>Leager-zju</Author>
+        <Description>Configuration data loader for handling binary encrypted config files</Description>
+        <PackageProjectUrl>https://github.com/Leager-zju/DataConfigTool</PackageProjectUrl>
+    </PropertyGroup>
+    <!-- NuGet 包依赖项 -->
+    <ItemGroup>
+        <!-- 如需要其他依赖，在这里添加 -->
+    </ItemGroup>
+    <!-- 编译输出设置 -->
+    <PropertyGroup>
+        <BaseOutputPath>./bin/</BaseOutputPath>
+        <BaseIntermediateOutputPath>./obj/</BaseIntermediateOutputPath>
+    </PropertyGroup>
+</Project>
