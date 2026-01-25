@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace SampleProject.Config
+namespace DataConfigTool.Config
 {
     public struct ITEM_INFO_CONF_DATA
     {
@@ -50,4 +50,3 @@ namespace SampleProject.Config
         }
     }
 }
-                

@@ -2,7 +2,7 @@ using System.Text;
 using System.Security.Cryptography;
 using System.Text.Json;
 
-namespace SampleProject.Config
+namespace DataConfigTool.Config
 {
     public interface IConfig
     {
