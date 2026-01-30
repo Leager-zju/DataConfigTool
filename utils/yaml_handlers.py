@@ -17,7 +17,6 @@ def keytype_constructor(loader, node):
     使用方式在YAML文件中：
         key_type: !KeyType global
         key_type: !KeyType group
-        key_type: !KeyType table
     
     Args:
         loader: YAML加载器
@@ -33,7 +32,7 @@ def keytype_constructor(loader, node):
     try:
         return KeyType(value.lower())
     except ValueError:
-        raise yaml.YAMLError(f"无效的KeyType值: {value}，必须为 table/group/global")
+        raise yaml.YAMLError(f"无效的KeyType值: {value}，必须为 group/global")
 
 
 def keytype_representer(dumper, data):

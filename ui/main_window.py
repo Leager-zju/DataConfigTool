@@ -130,8 +130,35 @@ class ConfigEditorApp:
             on_info_display=self.display_info
         )
 
+        # 初始化主键缓存并验证约束
+        self._initialize_pk_cache()
+
         # 初始加载数据
         self.file_tree_frame.refresh()
+
+    def _initialize_pk_cache(self):
+        """初始化主键缓存并验证所有约束
+        
+        加载所有配置表到缓存中，并检查是否存在主键冲突。
+        如有冲突，显示警告对话框。
+        """
+        try:
+            from utils import storage
+            
+            self.update_status("正在初始化主键缓存...")
+            conflicts = storage.load_all_tables_for_validation()
+            
+            if conflicts:
+                # 显示冲突警告
+                conflict_msg = "检测到以下主键约束冲突：\n\n" + "\n".join(conflicts)
+                messagebox.showwarning("主键约束冲突", conflict_msg)
+                self.update_status(f"初始化完成，发现 {len(conflicts)} 个主键冲突")
+            else:
+                self.update_status("主键缓存初始化完成，无冲突")
+                
+        except Exception as e:
+            messagebox.showerror("初始化错误", f"初始化主键缓存失败：{str(e)}")
+            self.update_status("初始化失败")
 
     def display_info(self, info: str):
         """在信息面板中显示详细信息
@@ -166,7 +193,7 @@ class ConfigEditorApp:
             self.file_tree_frame.refresh()
             self.update_status(f"已创建配置表: {dialog.result}")
 
-    def clean_temp_files(self):
+    def clean_temp_files(self, show_message: bool = True):
         """清理临时Excel文件
         
         删除.cache目录中的所有临时Excel文件。
@@ -180,11 +207,12 @@ class ConfigEditorApp:
                 file_count = len(list(temp_dir.glob("*.xlsx")))
                 shutil.rmtree(temp_dir)
                 temp_dir.mkdir(exist_ok=True)
-                
-                messagebox.showinfo("成功", f"已清理 {file_count} 个临时文件")
+                if show_message:
+                    messagebox.showinfo("成功", f"已清理 {file_count} 个临时文件")
                 self.update_status("临时文件清理完成")
             else:
-                messagebox.showinfo("信息", "没有找到临时文件")
+                if show_message:
+                    messagebox.showinfo("信息", "没有找到临时文件")
                 
         except Exception as e:
             messagebox.showerror("错误", f"清理失败: {str(e)}")

@@ -398,7 +398,6 @@ class FileTreeFrame(ttk.Frame):
             table = utils.load_table(table_path)
 
             key_type_display = {
-                utils.KeyType.TABLE: "表级唯一",
                 utils.KeyType.GROUP: "分组级唯一",
                 utils.KeyType.GLOBAL: "全局唯一"
             }.get(table.key_type, "未知")

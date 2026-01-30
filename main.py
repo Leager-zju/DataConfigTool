@@ -44,6 +44,7 @@ def main():
         # 设置窗口关闭事件
         def on_closing():
             if messagebox.askokcancel("退出", "确定要退出程序吗？"):
+                app.clean_temp_files(False)
                 root.destroy()
         
         root.protocol("WM_DELETE_WINDOW", on_closing)

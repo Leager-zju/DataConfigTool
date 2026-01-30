@@ -10,7 +10,7 @@ from typing import Dict, List, Any
 from dataclasses import dataclass, field
 
 from .enums import KeyType
-from .caches import get_global_pk_cache, get_group_pk_caches
+from .pk_cache import validate_primary_key
 
 
 @dataclass
@@ -103,40 +103,38 @@ class ConfigTable:
     """
     table_name: str
     group_name: str
-    key_type: KeyType = KeyType.TABLE  # 主键约束类型
+    key_type: KeyType = KeyType.GROUP  # 主键约束类型
     columns: List[ColumnDef] = field(default_factory=list)
     data: List[Dict[str, Any]] = field(default_factory=list)
 
-    def add_row(self, row_data: Dict[str, Any]):
-        """添加一行数据并进行类型验证和主键检查
+    def validate_all_primary_keys(self):
+        """验证所有数据行的主键约束
         
-        第一列必须为int类型的主键列，新增行的主键必须唯一。
+        遍历表中的所有数据行，验证主键列的值是否符合表的主键约束类型。
         
-        Args:
-            row_data: 包含列名和值的字典
-            
         Raises:
-            ValueError: 当数据验证或主键检查失败时
+            ValueError: 当发现主键冲突时
         """
-        validated_row = {}
-        for col in self.columns:
-            value = row_data.get(col.name)
-            validated_row[col.name] = col.validate_value(value)
-
-        # 验证主键约束
-        self._validate_primary_key(validated_row)
-
-        self.data.append(validated_row)
-
-    def _validate_primary_key(self, row_data: Dict[str, Any]):
-        """验证主键（第一列）的约束
+        if not self.columns:
+            return
         
-        根据表的key_type（TABLE/GROUP/GLOBAL），进行不同级别的主键验证。
+        pk_column = self.columns[0]
+        
+        for row in self.data:
+            pk_value = row.get(pk_column.name)
+            if pk_value is None or pk_value == "":
+                continue
+            
+            validate_primary_key(self.group_name, self.table_name, pk_value, self.key_type)
+
+    def validate_pk_by_row(self, row_data: Dict[str, Any]):
+        """验证主键的约束
+        
+        根据表的key_type（GROUP/GLOBAL），进行不同级别的主键验证。
         
         验证级别：
-        1. TABLE: 检查当前表中是否重复
-        2. GROUP: 检查同一分组中是否重复
-        3. GLOBAL: 检查全局是否重复
+        1. GROUP: 检查同一分组中是否重复
+        2. GLOBAL: 检查全局是否重复
         
         Args:
             row_data: 新行的数据
@@ -153,26 +151,7 @@ class ConfigTable:
         if pk_value is None or pk_value == "":
             return
         
-        # 1. TABLE 级别验证：当前表中唯一
-        for existing_row in self.data:
-            if existing_row.get(pk_column.name) == pk_value:
-                raise ValueError(f"主键冲突：'{pk_column.name}'的值'{pk_value}'在表'{self.table_name}'中已存在")
-        
-        # 2. GROUP 级别验证
-        if self.key_type in (KeyType.GROUP, KeyType.GLOBAL):
-            group_pk_caches = get_group_pk_caches()
-            if self.group_name in group_pk_caches:
-                group_cache = group_pk_caches[self.group_name]
-                if pk_value in group_cache:
-                    existing_table, existing_col = group_cache[pk_value]
-                    raise ValueError(f"主键冲突：'{pk_column.name}'的值'{pk_value}'已存在于分组'{self.group_name}'的表'{existing_table}'中")
-        
-        # 3. GLOBAL 级别验证
-        if self.key_type == KeyType.GLOBAL:
-            global_pk_cache = get_global_pk_cache()
-            if pk_value in global_pk_cache:
-                existing_table, existing_group, existing_col = global_pk_cache[pk_value]
-                raise ValueError(f"主键冲突：'{pk_column.name}'的值'{pk_value}'已在表'{existing_table}'（分组'{existing_group}'）中存在（全局约束）")
+        self.validate_key_func[self.key_type](self.group_name, self.table_name, pk_value)
 
     def to_dict(self) -> Dict:
         """转换为字典格式，用于序列化
@@ -212,16 +191,16 @@ class ConfigTable:
         )
         
         # 加载主键类型
-        key_type_str = data.get("key_type", "table")
+        key_type_str = data.get("key_type", "group")
         if isinstance(key_type_str, str):
             try:
                 table.key_type = KeyType(key_type_str)
             except ValueError:
-                table.key_type = KeyType.TABLE
+                table.key_type = KeyType.GROUP
         elif isinstance(key_type_str, KeyType):
             table.key_type = key_type_str
         else:
-            table.key_type = KeyType.TABLE
+            table.key_type = KeyType.GROUP
 
         # 加载列定义
         for col_data in data.get("columns", []):

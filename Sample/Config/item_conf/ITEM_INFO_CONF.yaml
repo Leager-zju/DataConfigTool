@@ -1,6 +1,6 @@
 table_name: ITEM_INFO_CONF
 group_name: item_conf
-key_type: !KeyType table
+key_type: !KeyType group
 columns:
 - name: id
   type: int

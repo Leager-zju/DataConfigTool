@@ -38,7 +38,7 @@ def format_worktable(ws, table: ConfigTable):
     Excel格式：
     - 第1行：列名
     - 第2行：数据类型
-    - 第3行：主键信息（如 KEY(GLOBAL), KEY(GROUP), KEY(TABLE)）
+    - 第3行：数据描述
     - 第4行以后：数据行
     
     Args:
@@ -58,15 +58,11 @@ def format_worktable(ws, table: ConfigTable):
         cell.fill = PK_TYPE_FILL if col_idx == 1 else TYPE_FILL
         cell.alignment = CENTER_ALIGN
         
-        # 第三行：主键信息（只在第一列显示）
-        if col_idx == 1:
-            key_info = f"KEY({table.key_type.value.upper()})"
-            cell = ws.cell(row=3, column=col_idx, value=key_info)
-            cell.fill = PK_KEY_FILL
-            cell.alignment = CENTER_ALIGN
-        else:
-            cell = ws.cell(row=3, column=col_idx, value="")
-            cell.fill = KEY_FILL
+        # 第三行：描述
+        description = col.description if col.description else ""
+        cell = ws.cell(row=3, column=col_idx, value=description)
+        cell.fill = KEY_FILL
+        cell.alignment = CENTER_ALIGN
 
     # 写入数据行（从第四行开始）
     for row_idx, row_data in enumerate(table.data, start=4):

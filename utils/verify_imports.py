@@ -24,7 +24,7 @@ try:
     
     # 2. 验证缓存模块
     print("[2/8] 验证 caches 模块...", end=" ")
-    from Tools.DataConfigTool.utils.caches import clear_pk_caches, get_global_pk_cache, get_group_pk_caches
+    from utils.pk_cache import clear_pk_caches, get_global_pk_cache, get_group_pk_caches
     print("✓")
     
     # 3. 验证数据模型

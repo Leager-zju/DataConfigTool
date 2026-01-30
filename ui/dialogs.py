@@ -53,7 +53,7 @@ class CreateTableDialog:
 
         # 主键类型选择
         ttk.Label(self.dialog, text="主键类型:").grid(row=2, column=0, padx=10, pady=10, sticky=tk.W)
-        self.key_type_var = tk.StringVar(value=KeyType.TABLE.value)
+        self.key_type_var = tk.StringVar(value=KeyType.GROUP.value)
         key_type_combo = ttk.Combobox(
             self.dialog,
             textvariable=self.key_type_var,

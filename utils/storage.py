@@ -9,16 +9,20 @@
 import yaml
 from pathlib import Path
 from typing import Dict, List
+from pathlib import Path
+from openpyxl import Workbook
 
+from .excel import format_worktable
 from .models import ConfigTable, ColumnDef
 from .enums import KeyType
-from .caches import clear_pk_caches, add_global_pk, add_group_pk
+from .pk_cache import clear_pk_caches
 from .setting_data import SettingData, PathKey as SettingPathKey
-from . import yaml_handlers  # 注册自定义YAML处理器
 
 
-# 获取配置目录
+# 获取配置目录和临时文件目录
 _config_dir = SettingData.get_instance().get_path(SettingPathKey.DATA_CONFIG_DIR)
+_temp_dir = _config_dir / ".cache"
+_temp_dir.mkdir(exist_ok=True)
 
 
 def get_config_dir() -> Path:
@@ -51,14 +55,13 @@ def load_table(table_path: Path) -> ConfigTable:
 
     table = ConfigTable.from_dict(data)
     
-    # 加载后验证并缓存主键
-    _rebuild_pk_cache_for_table(table)
-    
     return table
 
 
 def save_table(table: ConfigTable, table_path: Path):
     """保存配置表到YAML文件
+    
+    保存后会自动更新主键缓存。
     
     Args:
         table: 要保存的配置表对象
@@ -74,7 +77,7 @@ def save_table(table: ConfigTable, table_path: Path):
         yaml.dump(table.to_dict(), f, allow_unicode=True, sort_keys=False)
 
 
-def create_table(table_path: Path, table_name: str, group_name: str, columns: List[ColumnDef], key_type: KeyType = KeyType.TABLE):
+def create_table(table_path: Path, table_name: str, group_name: str, columns: List[ColumnDef], key_type: KeyType = KeyType.GROUP):
     """创建新的配置表
     
     Args:
@@ -82,7 +85,7 @@ def create_table(table_path: Path, table_name: str, group_name: str, columns: Li
         table_name: 配置表名称
         group_name: 所属组名称
         columns: 列定义列表
-        key_type: 主键类型（默认为TABLE）
+        key_type: 主键类型
     """
     table = ConfigTable(table_name=table_name, group_name=group_name, columns=columns, key_type=key_type)
     save_table(table, table_path)
@@ -133,50 +136,100 @@ def get_all_tables() -> Dict[str, List[Path]]:
     return tables
 
 
-def _rebuild_pk_cache_for_table(table: ConfigTable):
-    """为单个表重建主键缓存
-    
-    Args:
-        table: 配置表对象
-    """
-    if not table.columns:
-        return
-    
-    pk_column_name = table.columns[0].name
-    
-    for row in table.data:
-        pk_value = row.get(pk_column_name)
-        if pk_value is None or pk_value == "":
-            continue
-        
-        # 添加到适应的缓存级别
-        if table.key_type == KeyType.TABLE:
-            # TABLE类型不需要全局缓存
-            pass
-        elif table.key_type == KeyType.GROUP:
-            # 添加到分组缓存
-            add_group_pk(table.group_name, pk_value, table.table_name, pk_column_name)
-        elif table.key_type == KeyType.GLOBAL:
-            # 添加到全局缓存
-            add_global_pk(pk_value, table.table_name, table.group_name, pk_column_name)
-
-
 def load_all_tables_for_validation():
     """加载所有表以进行跨表/跨分组的主键验证
     
-    用于初始化全局和分组主键缓存。
+    用于初始化全局和分组主键缓存，并检查所有表的主键约束。
+    
+    Returns:
+        List[str]: 主键冲突的错误信息列表（空列表表示无冲突）
     """
     clear_pk_caches()
     tables = get_all_tables()
+    conflicts = []
     
     for group_name in tables.keys():
         table_files = tables[group_name]
         for table_file in table_files:
             try:
-                # 重新加载（不会再触发缓存构建）
                 with open(table_file, "r", encoding="utf-8") as f:
                     data = yaml.load(f, Loader=yaml.SafeLoader)
                 table = ConfigTable.from_dict(data)
-                _rebuild_pk_cache_for_table(table)
+                
+                # 根据表的key_type验证主键约束
+                table.validate_all_primary_keys()
             except Exception as e:
-                print(f"警告：加载表 {table_file} 失败：{e}")
+                error_msg = f"验证表 {table_file} 主键时出错：{e}"
+                print(f"错误：{error_msg}")
+                conflicts.append(error_msg)
+    
+    return conflicts
+
+# ============================================================================
+# 临时Excel文件管理
+# ============================================================================
+
+def create_temp_excel(table_path: Path) -> Path:
+    """为单个配置表创建临时Excel文件
+    
+    如果临时文件已存在则直接返回路径，避免重复创建。
+    
+    Args:
+        table_path: 配置表文件路径
+        
+    Returns:
+        Path: 临时Excel文件路径
+        
+    Raises:
+        Exception: 当配置表加载或Excel创建失败时
+    """
+    temp_file = _temp_dir / f"{table_path.stem}.xlsx"
+    
+    # 如果临时文件不存在，则创建新的
+    if not temp_file.exists():
+        table = load_table(table_path)
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = table.table_name
+
+        format_worktable(ws, table)
+        wb.save(temp_file)
+
+    return temp_file
+
+
+def create_temp_excel_for_group(group_name: str) -> Path:
+    """为整个组创建包含多个Table的临时Excel文件
+    
+    Args:
+        group_name: 组名
+        
+    Returns:
+        Path: 临时Excel文件路径
+        
+    Raises:
+        ValueError: 当表格不存在或没有配置表时
+        Exception: 当Excel创建失败时
+    """
+    temp_file = _temp_dir / f"{group_name}.xlsx"
+    
+    # 如果临时文件不存在，则创建新的
+    if not temp_file.exists():
+        table_files = get_group_tables(group_name)
+
+        if not table_files:
+            raise ValueError(f"分组 {group_name} 没有找到任何配置表")
+
+        wb = Workbook()
+        wb.remove(wb.active)  # 移除默认工作表
+
+        # 为每个配置表创建工作表
+        for table_file in table_files:
+            table = load_table(table_file)
+            ws = wb.create_sheet(title=table.table_name)
+            format_worktable(ws, table)
+
+        wb.save(temp_file)
+
+    return temp_file
